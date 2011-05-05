@@ -16,9 +16,27 @@ def cleanup_modification_array(array)
 	end
 	outs
 end
-def upcaser(sequence, test_match)
-	regex = test_match
-	sequence.downcase.gsub(/#{regex.downcase}/, "#{regex.upcase}")
+def upcaser(sequence, test_match, position_arr = nil)
+p position_arr
+p sequence.class
+p test_match	
+	if position_arr.class == Array
+		regex = test_match 
+		if position_arr.empty?
+			regex = test_match
+			sequence.gsub(/#{regex}/i, "#{regex.upcase}")
+		else
+			position_arr.each do |i|
+				a =  sequence.rpartition(/#{regex}/i)
+				sequence = a.shift + a.first[i]=a.first[i].upcase + a.last
+				p sequence
+				sequence
+			end
+		end
+	else
+		regex = test_match
+		sequence.gsub(/#{regex}/i, "#{regex.upcase}")
+	end
 end
 def bolder(sequence)
 	sequence.gsub(/([A-Z]+)/, '<span id="bold">\1</span>')
@@ -27,9 +45,12 @@ end
 def colorify(sequence)
 	sequence.gsub(/([A-Z]+)/, '<span id="colorify">\1</span>')
 end	
-
-
-
+=begin
+		seq = "YVSSKALQRQHSEGAAGKAPCILPIIENGK"
+		test2 = "GAAGKAPC"
+		seq2 = upcaser(seq.downcase, test2, [4])
+		abort
+=end
 if ARGV.size < 1
 	puts "Usage: #{File.basename(__FILE__)} Database.fasta 1.pepxml 2.pepxml ... ?.pepxml "
 	puts "Output: 1.coverage 2.coverage ... ?.coverage"
@@ -52,42 +73,56 @@ ARGV.each do |file|
 	proteins = Hash.new { |h,k| h[k] = [] }
 	pep_centric = Hash.new { |h,k| h[k] = [] }
 	amidinated = []; non_amidinated = []
+	ProteinEvidence = Struct.new(:accession, :peptide, :modification_arr, :evidence_arr )
 	top_hits.each do |hit| 
 		prot = hit.to_s[/protein="(\w*?)"/,1]
 		peptide = hit.to_s[/peptide="([A-Z]*?)"/,1]
 		next if peptide.nil? or prot.nil?
 		amidination_site = hit.to_s.scan(/mod_aminoacid_mass\sposition="(\d*?)"\smass="169.121512"/)
 		pep_centric[peptide.to_sym] << prot
-		proteins[prot.to_sym] << peptide
 		if amidination_site.empty?
-			non_amidinated << [prot, peptide,[amidination_site]]
+			proteins[prot.to_sym] << ProteinEvidence.new(prot, peptide, nil, amidination_site)
 		else
-			amidinated << [prot, peptide,[amidination_site]]
+			proteins[prot.to_sym] << ProteinEvidence.new(prot, peptide, amidination_site, nil)
 		end
 	end
-	amidinated = amidinated.sort_by{|a| a[1]}
-	amid_outs = []; non_amid_outs = []
-	non_amid_outs, amid_outs = [non_amidinated, amidinated].map do |array|
-		cleanup_modification_array(array)
-	end
-	p amid_outs.length
-	p non_amid_outs.length
-
 ######################################################################
 #	outputing 
 	# pep_db vs pep_centric
 	# prot_db vs proteins
-	output = []
-	output << "HEADER: \nACCESSION: example\nModified:Unmodified"
-	proteins.each do |key, value|
-		sequence = prot_db[key]
+	ProteinModMap = Struct.new(:accession, :modified_seq, :observed_norm_seq, :output)
+	prot_mods = proteins.map do |key, evidence_structs_array|
+		p key
+		p evidence_structs_array
+		output_arr = []
+		sequence = prot_db[key.to_sym]
 		if sequence.length > 1
-			output << "Protein: #{key} failed because of multiple prot_db sequences" 
-			next
+			output_arr << "============"
+			output_arr << "Protein: #{key} failed because of multiple prot_db sequences"
+			output_arr << "============"
+		else
+			output_arr << "============"
+			output_arr << "ACCESSION: #{key}"
+			output_arr << "Modified:"
+			tmp = sequence.first.downcase
+			modified_seq = tmp
+			observed_norm_seq = tmp
+			evidence_structs_array.each do |evidence_struct| # 	ProteinEvidence = Struct.new(:accession, :peptide, :modification_arr, :evidence_arr )
+				modified_seq = upcaser(modified_seq, evidence_struct.peptide, evidence_struct.modification_arr)
+				puts "OBS: #{observed_norm_seq}"
+				observed_norm_seq = upcaser(observed_norm_seq, evidence_struct.peptide, evidence_struct.evidence_arr)
+			end
+			output_arr << modified_seq 
+			output_arr << "Observed:"
+			output_arr << observed_norm_seq
+		puts output_arr 
+		abort
 		end
-		
 
-
+		ProteinModMap.new(key, modified_seq, observed_norm_seq, output_arr)
+	end
+output_arr << "HEADER: \nACCESSION: example\nModified:Unmodified"
+#puts output_arr
 end
 
 
