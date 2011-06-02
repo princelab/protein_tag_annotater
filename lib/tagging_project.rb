@@ -17,18 +17,19 @@ def upcaser(sequence, test_match, position_arr = nil)
 	sequence
 end
 def bolder(sequence)
-	sequence.gsub(/([A-Z]+)/, '<span id="bold">\1</span>')
+	sequence.gsub(/([A-Z]+)/, '<strong>\1</strong>')
+end
+def markdown(sequence)
+	sequence.gsub(/([A-Z]+)/, '*\1*')
 end
 
 def colorify(sequence)
-	sequence.gsub(/([A-Z]+)/, '<span id="colorify">\1</span>')
+	sequence.gsub(/([A-Z]+)/, '<span class="colorify">\1</span>')
 end	
-=begin
-		seq = "YVSSKALQRQHSEGAAGKAPCILPIIENGK"
-		test2 = "GAAGKAPC"
-		seq2 = upcaser(seq.downcase, test2, [4])
-		abort
-=end
+def color_misses(sequence)
+	sequence.gsub(/(k)/, '<span class="miss">\1</span>')
+end
+
 if ARGV.size < 1
 	puts "Usage: #{File.basename(__FILE__)} Database.fasta 1.pepxml 2.pepxml ... ?.pepxml "
 	puts "Output: 1.coverage 2.coverage ... ?.coverage"
@@ -36,9 +37,9 @@ if ARGV.size < 1
 end
 require 'bio'
 require 'nokogiri'
-#fasta = Bio::FlatFile.auto(ARGV.shift)
-FASTA = '/home/ryanmt/lab/DB/uni_bovin_var_100518_fwd.fasta'
-fasta = Bio::FlatFile.auto(FASTA)
+#fasta_file = Bio::FlatFile.auto(ARGV.shift)
+fasta_file = '/home/ryanmt/lab/DB/uni_bovin_var_100518_fwd.fasta'
+fasta = Bio::FlatFile.auto(fasta_file)
 prot_db = Hash.new { |h,k| h[k] = [] }
 pep_db = Hash.new { |h,k| h[k] = [] }
 fasta.each_entry do |entry|
@@ -81,8 +82,8 @@ ARGV.each do |file|
 			output_arr << "Protein: #{key} failed because of multiple prot_db sequences"
 			output_arr << "============"
 		else
-			output_arr << "ACCESSION: #{key}"
-			output_arr << "#{evidence_structs_array}"
+			output_arr << "##ACCESSION: #{key}"
+#			output_arr << "#{evidence_structs_array}"
 			tmp = sequence.first.downcase
 			modified_seq = tmp
 			observed_norm_seq = tmp
@@ -91,23 +92,23 @@ ARGV.each do |file|
 				#puts "OBS: #{observed_norm_seq}"
 				observed_norm_seq = upcaser(observed_norm_seq, evidence_struct.peptide, evidence_struct.evidence_arr)
 			end
-			output_arr << "Modified:"
-			output_arr << modified_seq 
+			output_arr << "Modified:\n"
 			output_arr << "Observed:"
-			output_arr << observed_norm_seq
+			output_arr << color_misses(bolder(modified_seq))
+			output_arr << bolder(observed_norm_seq)
 		end
 
 		ProteinModMap.new(key, modified_seq, observed_norm_seq, output_arr)
 	end
-output << "HEADER: \nACCESSION: example\nModified:Unmodified\n\n\n------------\n\t"
+output << "#HEADER: \n##ACCESSION: example\n##Modified\n_Sequence goes here_\n##Unmodified\n_Sequence goes here_\n\n------------\n#Data\n"
 #puts output_arr
-prot_mods.each {|prot| output << prot.output.join("\n\t")}
+prot_mods.each {|prot| output << prot.output.join("\n")}
 outstring = output.join("\n")
 #p prot_mods
 
 
-
-File.open('tmp.txt','w'){|f|
+file_outname = File.basename(file).gsub(File.extname(file), '') + ".markdown"
+File.open(file_outname,'w'){|f|
 	f.print outstring
 }
 end
