@@ -13,7 +13,6 @@ def upcaser(sequence, test_match, position_arr = nil)
 		regex = test_match
 		sequence = sequence.gsub(/#{regex}/i, "#{regex.upcase}")
 	end
-#	puts "Sequence: #{sequence}"
 	sequence
 end
 def bolder(sequence)
@@ -37,8 +36,8 @@ if ARGV.size < 1
 end
 require 'bio'
 require 'nokogiri'
-#fasta_file = Bio::FlatFile.auto(ARGV.shift)
-fasta_file = '/home/ryanmt/lab/DB/uni_bovin_var_100518_fwd.fasta'
+fasta_file = Bio::FlatFile.auto(ARGV.shift)
+#fasta_file = '/home/ryanmt/lab/DB/uni_bovin_var_100518_fwd.fasta'
 fasta = Bio::FlatFile.auto(fasta_file)
 prot_db = Hash.new { |h,k| h[k] = [] }
 pep_db = Hash.new { |h,k| h[k] = [] }
