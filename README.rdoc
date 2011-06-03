@@ -1,8 +1,8 @@
-= tagging_project
+= Protein Tag Annotater
 
-Description goes here.
+Great, so this is a little piece of code that is designed to take outputted *.pepxml files from a mascot search result and generate a line by line comparison that highlights the protein sequence for which fragments were observed (on the bottom line for each protein, in bold) and the observed mass modifications (currently the Amidine modification sites, edit the code yourself if you need to change that) on the top row.  This should be an appropriate way to represent the possible structural modifications that occur as sample conditions change, as evidenced by differences in the modification at lysine residues.
 
-== Contributing to tagging_project
+== Contributing to Protein Tag Annotater
  
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
@@ -14,6 +14,6 @@ Description goes here.
 
 == Copyright
 
-Copyright (c) 2011 Ryan Taylor. See LICENSE.txt for
+Copyright (c) 2011 BYU. See LICENSE.txt for
 further details.
 
